@@ -1,11 +1,13 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { Colors, FontSizes, FontWeights, TextStyles } from '@/constants';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+  /** Typography preset: default, title, subtitle, link, h1, h2, h3, body, small, caption, button */
+  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'h1' | 'h2' | 'h3' | 'body' | 'small' | 'caption' | 'button';
 };
 
 export function ThemedText({
@@ -17,15 +19,28 @@ export function ThemedText({
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
 
+  // Get new design system style if available, otherwise fall back to legacy
+  const getStyleByType = () => {
+    const typeStyleMap: Record<string, any> = {
+      h1: TextStyles.h1,
+      h2: TextStyles.h2,
+      h3: TextStyles.h3,
+      body: TextStyles.body,
+      small: TextStyles.small,
+      caption: TextStyles.caption,
+      button: TextStyles.button,
+    };
+    
+    return typeStyleMap[type] || styles[type as keyof typeof styles];
+  };
+
   return (
     <Text
       style={[
         { color },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
+        getStyleByType(),
+        // Legacy type-specific overrides
+        type === 'link' && { color: Colors.PRIMARY },
         style,
       ]}
       {...rest}
@@ -35,26 +50,28 @@ export function ThemedText({
 
 const styles = StyleSheet.create({
   default: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: FontSizes.base,
+    lineHeight: FontSizes.base * 1.5,
+    fontWeight: '400',
   },
   defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: FontSizes.base,
+    lineHeight: FontSizes.base * 1.5,
     fontWeight: '600',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+    fontSize: FontSizes['3xl'],
+    fontWeight: '700',
+    lineHeight: FontSizes['3xl'] * 1.2,
   },
   subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: FontSizes.xl,
+    fontWeight: '600',
+    lineHeight: FontSizes.xl * 1.5,
   },
   link: {
-    lineHeight: 30,
-    fontSize: 16,
-    color: '#0a7ea4',
+    lineHeight: FontSizes.base * 1.875,
+    fontSize: FontSizes.base,
+    color: Colors.PRIMARY,
   },
 });

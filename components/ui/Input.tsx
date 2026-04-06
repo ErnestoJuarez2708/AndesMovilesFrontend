@@ -7,6 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { Colors, Spacing, BorderRadius } from '@/constants';
 
 interface InputProps {
   placeholder?: string;
@@ -22,17 +23,6 @@ interface InputProps {
   required?: boolean;
   editable?: boolean;
 }
-
-const colors = {
-  primary: '#b45309',
-  stone50: '#f5f5f4',
-  stone100: '#f5f5f4',
-  stone200: '#e7e5e4',
-  stone500: '#78716c',
-  stone700: '#44403c',
-  stone900: '#1c1917',
-  red600: '#dc2626',
-};
 
 export function Input({
   placeholder,
@@ -52,42 +42,42 @@ export function Input({
 
   const styles = StyleSheet.create({
     container: {
-      marginVertical: 8,
+      marginVertical: Spacing.sm,
     },
     labelContainer: {
       flexDirection: 'row',
-      marginBottom: 6,
-      paddingHorizontal: 4,
+      marginBottom: Spacing.sm,
+      paddingHorizontal: Spacing.xs,
     },
     label: {
       fontSize: 14,
       fontWeight: '500',
-      color: colors.stone700,
+      color: Colors.STONE_700,
     },
     required: {
-      color: colors.red600,
-      marginLeft: 4,
+      color: Colors.ERROR,
+      marginLeft: Spacing.xs,
     },
     inputContainer: {
-      borderRadius: 12,
+      borderRadius: BorderRadius.md,
       borderWidth: 1,
-      borderColor: isFocused ? colors.primary : colors.stone200,
-      backgroundColor: isFocused ? colors.stone50 : colors.stone100,
+      borderColor: isFocused ? Colors.PRIMARY : Colors.BORDER,
+      backgroundColor: isFocused ? Colors.STONE_50 : Colors.STONE_100,
       overflow: 'hidden',
     },
     input: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md,
       fontSize: 14,
-      color: colors.stone900,
+      color: Colors.TEXT,
     },
     errorContainer: {
-      marginTop: 6,
-      paddingHorizontal: 4,
+      marginTop: Spacing.sm,
+      paddingHorizontal: Spacing.xs,
     },
     error: {
       fontSize: 12,
-      color: colors.red600,
+      color: Colors.ERROR,
     },
   });
 
@@ -108,7 +98,7 @@ export function Input({
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
-          placeholderTextColor={colors.stone500}
+          placeholderTextColor={Colors.TEXT_LIGHT}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           editable={editable}

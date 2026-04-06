@@ -8,28 +8,19 @@ import {
   ActivityIndicator,
   View,
 } from 'react-native';
+import { Colors, Spacing, BorderRadius } from '@/constants';
 
 interface ButtonProps {
   onPress: () => void;
   title?: string;
   loading?: boolean;
   disabled?: boolean;
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   size?: 'small' | 'medium' | 'large';
   children?: React.ReactNode;
   icon?: React.ReactNode;
   style?: ViewStyle;
 }
-
-const colors = {
-  primary: '#b45309',
-  secondary: '#92400e',
-  tertiary: '#78716c',
-  danger: '#dc2626',
-  white: '#ffffff',
-  stone50: '#f5f5f4',
-  stone100: '#f5f5f4',
-};
 
 export function Button({
   onPress,
@@ -42,26 +33,68 @@ export function Button({
   icon,
   style,
 }: ButtonProps) {
+  // Determine button colors based on variant
+  const variantStyles = {
+    primary: {
+      backgroundColor: Colors.PRIMARY,
+      textColor: '#fff',
+    },
+    secondary: {
+      backgroundColor: Colors.SECONDARY,
+      textColor: '#fff',
+    },
+    danger: {
+      backgroundColor: Colors.ERROR,
+      textColor: '#fff',
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+      textColor: Colors.PRIMARY,
+    },
+  };
+
+  // Determine size styles
+  const sizeStyles = {
+    small: {
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      fontSize: 12,
+    },
+    medium: {
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md,
+      fontSize: 14,
+    },
+    large: {
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.lg,
+      fontSize: 16,
+    },
+  };
+
+  const currentVariant = variantStyles[variant];
+  const currentSize = sizeStyles[size];
+
   const styles = StyleSheet.create({
     container: {
-      borderRadius: 12,
+      borderRadius: BorderRadius.md,
       overflow: 'hidden',
     },
     button: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
-      paddingHorizontal: size === 'small' ? 12 : size === 'large' ? 24 : 16,
-      paddingVertical: size === 'small' ? 8 : size === 'large' ? 16 : 12,
-      backgroundColor: variant === 'primary' ? colors.primary : 
-                      variant === 'secondary' ? colors.secondary :
-                      variant === 'danger' ? colors.danger : colors.tertiary,
+      gap: Spacing.md,
+      paddingHorizontal: currentSize.paddingHorizontal,
+      paddingVertical: currentSize.paddingVertical,
+      backgroundColor: currentVariant.backgroundColor,
       opacity: disabled ? 0.6 : 1,
+      borderWidth: variant === 'ghost' ? 1 : 0,
+      borderColor: variant === 'ghost' ? Colors.PRIMARY : 'transparent',
     },
     text: {
-      color: variant === 'tertiary' ? colors.stone50 : colors.white,
-      fontSize: size === 'small' ? 14 : size === 'large' ? 18 : 16,
+      color: currentVariant.textColor,
+      fontSize: currentSize.fontSize,
       fontWeight: '600',
     },
   });
@@ -70,11 +103,12 @@ export function Button({
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled || loading}
+      activeOpacity={0.7}
       style={[styles.container, style]}
     >
       <View style={styles.button}>
         {loading ? (
-          <ActivityIndicator size="small" color={colors.white} />
+          <ActivityIndicator size="small" color={currentVariant.textColor} />
         ) : (
           <>
             {icon}

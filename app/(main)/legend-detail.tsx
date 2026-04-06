@@ -7,32 +7,18 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  SafeAreaView,
   Alert,
+  Linking,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
+import { GlobalHeader } from '@/components/ui/GlobalHeader';
+import { Colors, Spacing, BorderRadius } from '@/constants';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-
-const colors = {
-  amber700: '#b45309',
-  amber100: '#fef3c7',
-  amber900: '#92400e',
-  stone50: '#f5f5f4',
-  stone100: '#e7e5e4',
-  stone200: '#d6d3d1',
-  stone300: '#d6d3d1',
-  stone500: '#78716c',
-  stone700: '#44403c',
-  stone800: '#292524',
-  stone900: '#1c1917',
-  white: '#ffffff',
-  green600: '#16a34a',
-};
 
 interface Legend {
   id: number;
@@ -43,6 +29,7 @@ interface Legend {
 
 export default function LegendDetailScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const [legend, setLegend] = useState<Legend | null>(null);
@@ -87,20 +74,27 @@ export default function LegendDetailScreen() {
 
     setDownloading(true);
     try {
-      const response = await axios.get(
-        `${API_URL}/api/pagos/descargar-demo/${legend.id}`,
-        { responseType: 'blob' }
-      );
-
-      Alert.alert(
-        '¡Éxito!',
-        '¡Demo descargada correctamente! Puedes instalarla en tu dispositivo Android.'
-      );
+      const url = `${API_URL}/api/pagos/descargar-demo/${legend.id}`;
+      
+      const canOpen = await Linking.canOpenURL(url);
+      
+      if (canOpen) {
+        await Linking.openURL(url);
+        Alert.alert(
+          '¡Descarga Iniciada!',
+          'La descarga de la demo ha comenzado. Puedes instalarla en tu dispositivo Android.'
+        );
+      } else {
+        Alert.alert(
+          'Error',
+          'No se pudo iniciar la descarga. Por favor, intenta de nuevo.'
+        );
+      }
     } catch (err: any) {
       console.error('Error descargando demo:', err);
       Alert.alert(
         'Error',
-        err.response?.data?.error || 'Error al descargar la demo. Inténtalo de nuevo.'
+        'Error al descargar la demo. Inténtalo de nuevo.'
       );
     } finally {
       setDownloading(false);
@@ -122,23 +116,39 @@ export default function LegendDetailScreen() {
     router.push('/(main)/payment');
   };
 
+  const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(main)/catalog');
+    }
+  };
+
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.amber700} />
-        <Text style={styles.loadingText}>Cargando leyenda...</Text>
+      <View style={styles.container}>
+        <GlobalHeader
+          back={true}
+          title={legend?.titulo || 'Cargando...'}
+          onBackPress={handleBackPress}
+          user={user}
+        />
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.PRIMARY} />
+          <Text style={styles.loadingText}>Cargando leyenda...</Text>
+        </View>
       </View>
     );
   }
 
   if (error || !legend) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.white} />
-          </TouchableOpacity>
-        </View>
+      <View style={styles.container}>
+        <GlobalHeader
+          back={true}
+          onBackPress={handleBackPress}
+          user={user}
+        />
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>{error || 'Leyenda no encontrada'}</Text>
           <Button
@@ -147,23 +157,24 @@ export default function LegendDetailScreen() {
             style={styles.retryButton}
           />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <GlobalHeader
+        back={true}
+        title={legend.titulo}
+        onBackPress={handleBackPress}
+        user={user}
+      />
+
       <ScrollView scrollEnabled style={styles.scrollView}>
-        {/* Header with back button */}
-        <View style={styles.headerImage}>
-          <Image source={{ uri: legend.imagen_url }} style={styles.image} />
-          <View style={styles.headerOverlay} />
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.white} />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.detailTitle}>{legend.titulo}</Text>
-          </View>
+        {/* Hero Image - now BELOW header (not absolute over) */}
+        <View style={styles.heroContainer}>
+          <Image source={{ uri: legend.imagen_url }} style={styles.heroImage} />
+          <View style={styles.heroOverlay} />
         </View>
 
         {/* Description */}
@@ -180,10 +191,10 @@ export default function LegendDetailScreen() {
           style={styles.demoButton}
         >
           {downloading ? (
-            <ActivityIndicator size="small" color={colors.amber900} />
+            <ActivityIndicator size="small" color={Colors.PRIMARY_900} />
           ) : (
             <>
-              <Ionicons name="game-controller" size={20} color={colors.amber900} />
+              <Ionicons name="game-controller" size={20} color={Colors.PRIMARY_900} />
               <Text style={styles.demoButtonText}>Jugar Demo</Text>
             </>
           )}
@@ -192,7 +203,7 @@ export default function LegendDetailScreen() {
         <Button
           title="Completo ($2)"
           onPress={handleFullClick}
-          icon={<Ionicons name="card" size={20} color={colors.white} />}
+          icon={<Ionicons name="card" size={20} color="#fff" />}
           style={styles.fullButton}
         />
       </View>
@@ -206,17 +217,17 @@ export default function LegendDetailScreen() {
         }
         style={styles.commentsButton}
       >
-        <Ionicons name="chatbubble-ellipses" size={20} color={colors.stone800} />
+        <Ionicons name="chatbubble-ellipses" size={20} color={Colors.STONE_800} />
         <Text style={styles.commentsButtonText}>Ver Comentarios</Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.stone50,
+    backgroundColor: Colors.STONE_50,
   },
   scrollView: {
     flex: 1,
@@ -226,131 +237,104 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: Spacing.lg,
   },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  headerImage: {
+  heroContainer: {
     position: 'relative',
     height: 320,
-    backgroundColor: colors.stone300,
+    backgroundColor: Colors.STONE_300,
+    overflow: 'hidden',
   },
-  image: {
-    ...StyleSheet.absoluteFillObject,
+  heroImage: {
     width: '100%',
     height: '100%',
   },
-  headerOverlay: {
+  heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(28, 25, 23, 0.4)',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 12,
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 20,
-  },
-  titleContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(28, 25, 23, 0.6)',
-  },
-  detailTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.white,
-    fontFamily: 'Georgia',
+    backgroundColor: 'rgba(28, 25, 23, 0.2)',
   },
   contentContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xl,
   },
   description: {
     fontSize: 16,
-    color: colors.stone700,
+    color: Colors.STONE_700,
     lineHeight: 24,
     fontFamily: 'Georgia',
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: Spacing.md,
     fontSize: 16,
-    color: colors.stone500,
+    color: Colors.TEXT_LIGHT,
   },
   errorText: {
     fontSize: 16,
-    color: colors.stone500,
+    color: Colors.TEXT_LIGHT,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   retryButton: {
-    marginTop: 16,
+    marginTop: Spacing.lg,
   },
   actionsContainer: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 16,
-    backgroundColor: colors.stone50,
-    paddingVertical: 12,
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.lg,
+    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: colors.stone200,
+    borderTopColor: Colors.STONE_200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   demoButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    backgroundColor: colors.amber100,
-    borderRadius: 12,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.PRIMARY_100,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.sm,
   },
   demoButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.amber900,
+    color: Colors.PRIMARY_900,
   },
   fullButton: {
     flex: 1,
   },
   commentsButton: {
     position: 'absolute',
-    bottom: 12,
-    left: 16,
-    right: 16,
+    bottom: 80,
+    right: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    backgroundColor: colors.stone200,
-    borderRadius: 12,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: '#fff',
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.STONE_200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   commentsButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: colors.stone800,
+    color: Colors.STONE_800,
   },
 });

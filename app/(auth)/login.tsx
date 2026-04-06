@@ -7,32 +7,21 @@ import {
   Text,
   Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-
-const colors = {
-  amber700: '#b45309',
-  amber900: '#92400e',
-  stone50: '#f5f5f4',
-  stone100: '#e7e5e4',
-  stone200: '#d6d3d1',
-  stone500: '#78716c',
-  stone700: '#44403c',
-  stone800: '#292524',
-  stone900: '#1c1917',
-  white: '#ffffff',
-  red600: '#dc2626',
-  red50: '#fef2f2',
-};
+import { GlobalHeader } from '@/components/ui/GlobalHeader';
+import { Colors, Spacing, BorderRadius, Shadows } from '@/constants';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -50,21 +39,27 @@ export default function LoginScreen() {
     }
   };
 
+  const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(splash)/splash');
+    }
+  };
+
   return (
     <View style={styles.container}>
+      <GlobalHeader
+        back={true}
+        onBackPress={handleBackPress}
+        onLoginPress={() => router.replace('/(auth)/login')}
+        onRegisterPress={() => router.push('/(auth)/register')}
+      />
+
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.stone500} />
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.content}>
           <View style={styles.card}>
             <View style={styles.titleContainer}>
@@ -74,37 +69,53 @@ export default function LoginScreen() {
 
             {error ? (
               <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle" size={20} color={colors.red600} />
+                <Ionicons name="alert-circle" size={20} color={Colors.ERROR} />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             ) : null}
 
             <View style={styles.form}>
-              <Input
-                label="Correo electrónico"
-                placeholder="ejemplo@correo.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                required
-              />
+              <View>
+                <Input
+                  label="Correo electrónico"
+                  placeholder="ejemplo@correo.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  required
+                />
+              </View>
 
-              <Input
-                label="Contraseña"
-                placeholder="••••••••"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                required
-              />
+              <View>
+                <View>
+                  <Input
+                    label="Contraseña"
+                    placeholder="••••••••"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    required
+                  />
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIconButton}
+                >
+                  <Ionicons 
+                    name={showPassword ? "eye" : "eye-off"} 
+                    size={20} 
+                    color={Colors.TEXT_LIGHT}
+                  />
+                </TouchableOpacity>
+              </View>
 
               <Button
                 title={loading ? 'Ingresando...' : 'Ingresar'}
                 onPress={handleSubmit}
                 loading={loading}
                 disabled={loading}
-                icon={!loading && <Ionicons name="log-in" size={20} color={colors.white} />}
+                icon={!loading && <Ionicons name="log-in" size={20} color="#fff" />}
                 style={styles.submitButton}
               />
             </View>
@@ -125,99 +136,89 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.stone50,
+    backgroundColor: Colors.STONE_50,
   },
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 0,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
   content: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xl,
   },
   card: {
-    backgroundColor: colors.white,
-    borderRadius: 24,
-    padding: 32,
+    backgroundColor: '#fff',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xxxl,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
     elevation: 5,
     borderWidth: 1,
-    borderColor: colors.stone100,
+    borderColor: Colors.STONE_100,
   },
   titleContainer: {
-    marginBottom: 32,
+    marginBottom: Spacing.xxxl,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.amber900,
-    marginBottom: 8,
+    color: Colors.PRIMARY_900,
+    marginBottom: Spacing.sm,
     fontFamily: 'Georgia',
   },
   subtitle: {
     fontSize: 14,
-    color: colors.stone500,
+    color: Colors.TEXT_LIGHT,
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.red50,
+    backgroundColor: Colors.ERROR_LIGHT,
     borderWidth: 1,
     borderColor: '#fecaca',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 24,
-    gap: 8,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.xl,
+    gap: Spacing.sm,
   },
   errorText: {
     flex: 1,
     fontSize: 14,
-    color: colors.red600,
+    color: Colors.ERROR,
     fontWeight: '500',
   },
   form: {
-    gap: 16,
-    marginBottom: 24,
+    gap: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  eyeIconButton: {
+    position: 'absolute',
+    right: Spacing.md,
+    top: '50%',
+    transform: [{ translateY: -10 }],
+    padding: Spacing.sm,
+    zIndex: 5,
   },
   submitButton: {
-    marginTop: 8,
+    marginTop: Spacing.sm,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 32,
+    marginTop: Spacing.xxxl,
   },
   footerText: {
     fontSize: 14,
-    color: colors.stone500,
+    color: Colors.TEXT_LIGHT,
   },
   linkText: {
     fontSize: 14,
-    color: colors.amber700,
+    color: Colors.PRIMARY,
     fontWeight: '600',
     textDecorationLine: 'underline',
   },

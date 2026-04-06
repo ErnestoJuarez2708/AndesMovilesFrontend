@@ -7,34 +7,17 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { GlobalHeader } from '@/components/ui/GlobalHeader';
+import { Colors, Spacing, BorderRadius } from '@/constants';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-
-const colors = {
-  amber900: '#92400e',
-  amber50: '#fffbeb',
-  stone50: '#f5f5f4',
-  stone100: '#e7e5e4',
-  stone200: '#d6d3d1',
-  stone300: '#d6d3d1',
-  stone400: '#a8a29e',
-  stone500: '#78716c',
-  stone600: '#57534e',
-  stone700: '#44403c',
-  stone800: '#292524',
-  stone900: '#1c1917',
-  white: '#ffffff',
-  amber500: '#d97706',
-  amber600: '#d97706',
-};
 
 interface Comment {
   id: number;
@@ -48,6 +31,7 @@ interface Comment {
 
 export default function CommentsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, token } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -125,7 +109,7 @@ export default function CommentsScreen() {
     <View style={styles.commentCard}>
       <View style={styles.commentHeader}>
         <View style={styles.userAvatar}>
-          <Ionicons name="person" size={16} color={colors.stone500} />
+          <Ionicons name="person" size={16} color={Colors.TEXT_LIGHT} />
         </View>
         <View style={styles.commentMeta}>
           <Text style={styles.userName}>{item.usuario?.nombre || 'Usuario'}</Text>
@@ -141,7 +125,7 @@ export default function CommentsScreen() {
             key={i}
             name={i < item.rating ? 'star' : 'star-outline'}
             size={14}
-            color={i < item.rating ? colors.amber500 : colors.stone300}
+            color={i < item.rating ? Colors.WARNING : Colors.STONE_300}
           />
         ))}
       </View>
@@ -150,25 +134,31 @@ export default function CommentsScreen() {
     </View>
   );
 
+  const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(main)/catalog');
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <GlobalHeader
+        back={true}
+        title="Comentarios y Opiniones"
+        onBackPress={handleBackPress}
+        user={user}
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={colors.amber50} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Comentarios y Opiniones</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
         {/* Comments List */}
         {loading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.amber900} />
+            <ActivityIndicator size="large" color={Colors.PRIMARY} />
             <Text style={styles.loadingText}>Cargando comentarios...</Text>
           </View>
         ) : (
@@ -207,7 +197,7 @@ export default function CommentsScreen() {
                         name={star <= rating ? 'star' : 'star-outline'}
                         size={22}
                         color={
-                          star <= rating ? colors.amber500 : colors.stone300
+                          star <= rating ? Colors.WARNING : Colors.STONE_300
                         }
                       />
                     </TouchableOpacity>
@@ -219,7 +209,7 @@ export default function CommentsScreen() {
                 <TextInput
                   style={styles.textInput}
                   placeholder="Escribe tu opinión..."
-                  placeholderTextColor={colors.stone500}
+                  placeholderTextColor={Colors.TEXT_LIGHT}
                   value={newComment}
                   onChangeText={setNewComment}
                   editable={!submitting}
@@ -238,7 +228,7 @@ export default function CommentsScreen() {
                     name="send"
                     size={18}
                     color={
-                      newComment.trim() && !submitting ? colors.white : colors.stone300
+                      newComment.trim() && !submitting ? '#fff' : Colors.STONE_300
                     }
                   />
                 </TouchableOpacity>
@@ -259,31 +249,17 @@ export default function CommentsScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.stone50,
+    backgroundColor: Colors.STONE_50,
   },
   keyboardView: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.amber900,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.amber50,
-    letterSpacing: 0.3,
   },
   centerContainer: {
     flex: 1,
@@ -291,34 +267,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: Spacing.md,
     fontSize: 14,
-    color: colors.stone500,
+    color: Colors.TEXT_LIGHT,
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
   },
   commentCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
     borderWidth: 1,
-    borderColor: colors.stone100,
-    marginBottom: 4,
+    borderColor: Colors.STONE_100,
+    marginBottom: Spacing.xs,
   },
   commentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
+    marginBottom: Spacing.sm,
+    gap: Spacing.sm,
   },
   userAvatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.stone200,
+    backgroundColor: Colors.STONE_200,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -326,110 +302,115 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: colors.stone800,
+    color: Colors.STONE_800,
   },
   commentDate: {
     fontSize: 12,
-    color: colors.stone400,
+    color: Colors.TEXT_LIGHT,
   },
   ratingContainer: {
     flexDirection: 'row',
-    gap: 4,
-    marginBottom: 8,
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   commentText: {
-    fontSize: 13,
-    color: colors.stone600,
-    lineHeight: 18,
+    fontSize: 14,
+    color: Colors.STONE_700,
+    lineHeight: 20,
   },
   emptyContainer: {
-    paddingVertical: 48,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
   },
   emptyText: {
-    fontSize: 14,
-    color: colors.stone500,
-    marginBottom: 4,
+    fontSize: 16,
+    color: Colors.TEXT_LIGHT,
+    marginBottom: Spacing.sm,
   },
   emptySubtext: {
-    fontSize: 12,
-    color: colors.stone400,
+    fontSize: 14,
+    color: Colors.STONE_400,
   },
   inputContainer: {
-    backgroundColor: colors.white,
     borderTopWidth: 1,
-    borderTopColor: colors.stone200,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderTopColor: Colors.STONE_200,
+    backgroundColor: '#fff',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
   },
   formContainer: {
-    gap: 12,
+    gap: Spacing.md,
   },
   errorMessage: {
-    color: '#dc2626',
-    fontSize: 12,
+    color: Colors.ERROR,
+    fontSize: 13,
+    marginBottom: Spacing.sm,
   },
   ratingSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: Spacing.sm,
   },
   ratingLabel: {
     fontSize: 13,
-    fontWeight: '500',
-    color: colors.stone600,
+    fontWeight: '600',
+    color: Colors.STONE_800,
   },
   ratingButtons: {
     flexDirection: 'row',
-    gap: 4,
+    gap: Spacing.md,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-    backgroundColor: colors.stone100,
-    borderRadius: 12,
-    paddingRight: 8,
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: Colors.STONE_200,
+    borderRadius: BorderRadius.lg,
+    paddingRight: 40,
+    minHeight: 100,
   },
   textInput: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 13,
-    color: colors.stone900,
-    maxHeight: 80,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    fontSize: 14,
+    color: Colors.STONE_700,
+    textAlignVertical: 'top',
   },
   sendButton: {
+    position: 'absolute',
+    bottom: Spacing.md,
+    right: Spacing.md,
     width: 32,
     height: 32,
-    borderRadius: 8,
-    backgroundColor: colors.amber600,
+    borderRadius: 16,
+    backgroundColor: Colors.PRIMARY,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: colors.stone300,
+    backgroundColor: Colors.STONE_200,
   },
   notAuthContainer: {
-    paddingVertical: 12,
     alignItems: 'center',
+    gap: Spacing.md,
+    paddingVertical: Spacing.xl,
   },
   notAuthText: {
-    fontSize: 13,
-    color: colors.stone600,
-    marginBottom: 8,
+    fontSize: 14,
+    color: Colors.TEXT_LIGHT,
+    textAlign: 'center',
   },
   loginLink: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.PRIMARY,
+    borderRadius: BorderRadius.lg,
   },
   loginLinkText: {
-    color: colors.amber900,
+    color: '#fff',
     fontWeight: '600',
-    fontSize: 13,
-    textDecorationLine: 'underline',
+    fontSize: 14,
   },
 });

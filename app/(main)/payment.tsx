@@ -1,31 +1,22 @@
+import { Button } from '@/components/ui/Button';
+import { BorderRadius, Colors, Spacing } from '@/constants';
+import { GlobalHeader } from '@/components/ui/GlobalHeader';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useNavigation } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
 import React, { useState } from 'react';
 import {
-  View,
   ScrollView,
-  Text,
   StyleSheet,
-  TouchableOpacity,
+  Text,
   TextInput,
-  SafeAreaView,
-  ActivityIndicator,
+  View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Button } from '@/components/ui/Button';
-
-const colors = {
-  stone900: '#1c1917',
-  stone800: '#292524',
-  stone300: '#d6d3d1',
-  stone200: '#d6d3d1',
-  stone50: '#f5f5f4',
-  white: '#ffffff',
-  green600: '#16a34a',
-  green100: '#dcfce7',
-};
 
 export default function PaymentScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [cardNumber, setCardNumber] = useState('');
@@ -63,12 +54,26 @@ export default function PaymentScreen() {
     }, 2000);
   };
 
+  const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(main)/catalog');
+    }
+  };
+
   if (isSuccess) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+        <GlobalHeader
+          back={true}
+          title="Pago Seguro"
+          onBackPress={handleBackPress}
+          user={user}
+        />
         <View style={styles.successContainer}>
           <View style={styles.successIcon}>
-            <Ionicons name="checkmark-circle" size={60} color={colors.green600} />
+            <Ionicons name="checkmark-circle" size={60} color={Colors.SUCCESS} />
           </View>
           <Text style={styles.successTitle}>¡Pago Exitoso!</Text>
           <Text style={styles.successMessage}>
@@ -80,30 +85,27 @@ export default function PaymentScreen() {
             style={styles.successButton}
           />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={colors.stone800} />
-          </TouchableOpacity>
-          <View style={styles.headerTitle}>
-            <Ionicons name="lock" size={16} color={colors.green600} />
-            <Text style={styles.headerText}>Pago Seguro</Text>
-          </View>
-          <View style={{ width: 24 }} />
-        </View>
+    <View style={styles.container}>
+      <GlobalHeader
+        back={true}
+        title="Pago Seguro"
+        onBackPress={handleBackPress}
+        user={user}
+      />
 
-        {/* Payment Summary */}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Summary */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>Total a pagar</Text>
           <Text style={styles.summaryAmount}>$2.00 USD</Text>
-          <Text style={styles.summaryProduct}>Juego Completo: La Leyenda del Lago Titicaca</Text>
+          <Text style={styles.summaryProduct}>
+            Juego Completo: La Leyenda del Lago Titicaca
+          </Text>
         </View>
 
         {/* Payment Form */}
@@ -111,11 +113,11 @@ export default function PaymentScreen() {
           <View style={styles.formGroup}>
             <Text style={styles.label}>Número de Tarjeta</Text>
             <View style={styles.inputContainer}>
-              <Ionicons name="card" size={18} color={colors.stone300} style={styles.inputIcon} />
+              <Ionicons name="card" size={18} color={Colors.STONE_300} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="0000 0000 0000 0000"
-                placeholderTextColor={colors.stone300}
+                placeholderTextColor={Colors.STONE_300}
                 value={cardNumber}
                 onChangeText={formatCardNumber}
                 keyboardType="numeric"
@@ -131,7 +133,7 @@ export default function PaymentScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="MM/YY"
-                placeholderTextColor={colors.stone300}
+                placeholderTextColor={Colors.STONE_300}
                 value={expiry}
                 onChangeText={formatExpiry}
                 keyboardType="numeric"
@@ -145,7 +147,7 @@ export default function PaymentScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="123"
-                placeholderTextColor={colors.stone300}
+                placeholderTextColor={Colors.STONE_300}
                 value={cvc}
                 onChangeText={setCvc}
                 keyboardType="numeric"
@@ -161,7 +163,7 @@ export default function PaymentScreen() {
             <TextInput
               style={styles.input}
               placeholder="Juan Pérez"
-              placeholderTextColor={colors.stone300}
+              placeholderTextColor={Colors.STONE_300}
               value={cardHolder}
               onChangeText={setCardHolder}
               editable={!isProcessing}
@@ -173,7 +175,7 @@ export default function PaymentScreen() {
             onPress={handlePayment}
             loading={isProcessing}
             disabled={isProcessing}
-            icon={!isProcessing && <Ionicons name="lock" size={18} color={colors.white} />}
+            icon={!isProcessing && <Ionicons name="lock-closed" size={18} color="#fff" />}
             style={styles.payButton}
           />
         </View>
@@ -185,139 +187,121 @@ export default function PaymentScreen() {
           <View style={styles.brandPlaceholder} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.stone50,
+    backgroundColor: Colors.STONE_50,
   },
   scrollContent: {
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.stone200,
-    backgroundColor: colors.white,
-  },
-  headerTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.stone800,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xl,
+    paddingBottom: Spacing.xxl,
   },
   summaryCard: {
-    margin: 16,
-    padding: 16,
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.stone200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: Colors.PRIMARY_900,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xl,
+    marginBottom: Spacing.xl,
+    alignItems: 'center',
   },
   summaryLabel: {
     fontSize: 13,
-    color: colors.stone300,
-    marginBottom: 4,
+    fontWeight: '500',
+    color: Colors.PRIMARY_100,
+    marginBottom: Spacing.sm,
   },
   summaryAmount: {
-    fontSize: 28,
+    fontSize: 36,
     fontWeight: '700',
-    color: colors.stone800,
+    color: Colors.PRIMARY_100,
+    marginBottom: Spacing.md,
+    fontFamily: 'Georgia',
   },
   summaryProduct: {
-    fontSize: 13,
-    color: colors.stone300,
-    marginTop: 8,
+    fontSize: 12,
+    color: Colors.PRIMARY_100,
+    textAlign: 'center',
+    opacity: 0.8,
   },
   formContainer: {
-    paddingHorizontal: 16,
-    gap: 16,
+    gap: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   formGroup: {
-    gap: 6,
+    gap: Spacing.sm,
   },
   label: {
     fontSize: 13,
-    fontWeight: '500',
-    color: colors.stone800,
+    fontWeight: '600',
+    color: Colors.STONE_800,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.stone300,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    backgroundColor: colors.white,
+    borderColor: Colors.STONE_200,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: '#fff',
   },
   inputIcon: {
-    marginRight: 8,
+    marginRight: Spacing.sm,
   },
   input: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: Spacing.md,
     fontSize: 14,
-    color: colors.stone800,
+    color: Colors.STONE_800,
   },
   rowContainer: {
     flexDirection: 'row',
+    gap: 0,
   },
   payButton: {
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: Spacing.lg,
   },
   cardBrands: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
+    gap: Spacing.lg,
+    marginTop: Spacing.xl,
   },
   brandPlaceholder: {
-    width: 40,
-    height: 24,
-    backgroundColor: colors.stone300,
-    borderRadius: 4,
+    width: 50,
+    height: 32,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.STONE_200,
   },
   successContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: Spacing.lg,
   },
   successIcon: {
-    marginBottom: 24,
+    marginBottom: Spacing.xl,
   },
   successTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.stone800,
-    marginBottom: 8,
+    color: Colors.PRIMARY_900,
+    marginBottom: Spacing.md,
     fontFamily: 'Georgia',
+    textAlign: 'center',
   },
   successMessage: {
-    fontSize: 16,
-    color: colors.stone300,
+    fontSize: 14,
+    color: Colors.TEXT_LIGHT,
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
+    marginBottom: Spacing.xl,
+    lineHeight: 20,
   },
   successButton: {
-    width: '100%',
+    minWidth: 200,
   },
 });
