@@ -113,7 +113,14 @@ export default function LegendDetailScreen() {
       );
       return;
     }
-    router.push('/(main)/payment');
+    if (!legend?.id) {
+      Alert.alert('Error', 'ID del minijuego no disponible');
+      return;
+    }
+    router.push({
+      pathname: '/(main)/payment',
+      params: { microjuegoId: legend.id.toString() }
+    });
   };
 
   const handleBackPress = () => {
