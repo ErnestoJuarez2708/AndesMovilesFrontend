@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
-  Alert,
 } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { GlobalHeader } from '@/components/ui/GlobalHeader';
-import { Colors, Spacing, BorderRadius, Shadows } from '@/constants';
+import { Colors, Spacing, BorderRadius } from '@/constants';
 
 export default function LoginScreen() {
   const router = useRouter();

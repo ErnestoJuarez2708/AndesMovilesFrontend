@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { GlobalHeader } from '@/components/ui/GlobalHeader';
-import { Colors, Spacing, BorderRadius, Shadows } from '@/constants';
+import { Colors, Spacing, BorderRadius } from '@/constants';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -27,7 +27,7 @@ interface Legend {
 
 export default function CatalogScreen() {
   const router = useRouter();
-  const { logout, token, user } = useAuth();
+  const { logout, user } = useAuth();
   const [legends, setLegends] = useState<Legend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,36 +125,38 @@ export default function CatalogScreen() {
         onRegisterPress={() => router.push('/(auth)/register')}
       />
 
-      <Text style={styles.subtitle}>
-        Descubre las historias milenarias, mitos y tradiciones que envuelven a la ciudad maravilla y sus alrededores.
-      </Text>
+      <View style={styles.mainContent}>
+        <Text style={styles.subtitle}>
+          Descubre las historias milenarias, mitos y tradiciones que envuelven a la ciudad maravilla y sus alrededores.
+        </Text>
 
-      {/* Legends List */}
-      {legends.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No hay leyendas disponibles aún.</Text>
-          <Text style={styles.emptySubtext}>Más sectores próximamente...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={legends}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <LegendCard
-              legend={item}
-              onPress={() => router.push({
-                pathname: '/(main)/legend-detail',
-                params: { id: item.id.toString() },
-              })}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          scrollEnabled
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        />
-      )}
+        {/* Legends List */}
+        {legends.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No hay leyendas disponibles aún.</Text>
+            <Text style={styles.emptySubtext}>Más sectores próximamente...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={legends}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <LegendCard
+                legend={item}
+                onPress={() => router.push({
+                  pathname: '/(main)/legend-detail',
+                  params: { id: item.id.toString() },
+                })}
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+            scrollEnabled
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          />
+        )}
+      </View>
     </View>
   );
 }
@@ -194,6 +196,10 @@ function LegendCard({ legend, onPress }: LegendCardProps) {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: Colors.STONE_50,
+  },
+  mainContent: {
     flex: 1,
     backgroundColor: Colors.STONE_100,
   },

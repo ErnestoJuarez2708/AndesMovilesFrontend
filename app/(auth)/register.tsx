@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
-  Alert,
 } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { GlobalHeader } from '@/components/ui/GlobalHeader';
-import { Colors, Spacing, BorderRadius, Shadows } from '@/constants';
+import { Colors, Spacing, BorderRadius } from '@/constants';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -65,13 +64,11 @@ export default function RegisterScreen() {
         password: formData.password,
       };
 
-      const response = await axios.post(`${API_URL}/api/auth/register`, payload, {
+      await axios.post(`${API_URL}/api/auth/register`, payload, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
-
-      const { token } = response.data;
 
       // Auto-login after registration
       await login(formData.email, formData.password);

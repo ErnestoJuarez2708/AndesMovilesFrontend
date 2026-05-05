@@ -42,32 +42,32 @@ export default function CommentsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (id) {
-      fetchComments();
-    }
+    if (!id) return;
+    
+    const fetchComments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await axios.get(`${API_URL}/api/comentarios/${id}`);
+        const comentariosArray = Array.isArray(response.data.comentarios)
+          ? response.data.comentarios
+          : Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        setComments(comentariosArray);
+      } catch (err: any) {
+        console.error('Error fetching comments:', err);
+        setError('No se pudieron cargar los comentarios');
+        setComments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComments();
   }, [id]);
-
-  const fetchComments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await axios.get(`${API_URL}/api/comentarios/${id}`);
-      const comentariosArray = Array.isArray(response.data.comentarios)
-        ? response.data.comentarios
-        : Array.isArray(response.data)
-        ? response.data
-        : [];
-
-      setComments(comentariosArray);
-    } catch (err: any) {
-      console.error('Error fetching comments:', err);
-      setError('No se pudieron cargar los comentarios');
-      setComments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async () => {
     if (!newComment.trim() || !user || !id || !token) return;
@@ -151,104 +151,106 @@ export default function CommentsScreen() {
         user={user}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        {/* Comments List */}
-        {loading ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={Colors.PRIMARY} />
-            <Text style={styles.loadingText}>Cargando comentarios...</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={comments}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderCommentItem}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>Aún no hay comentarios.</Text>
-                <Text style={styles.emptySubtext}>¡Sé el primero!</Text>
-              </View>
-            }
-            scrollEnabled
-          />
-        )}
-
-        {/* Comment Input */}
-        <View style={styles.inputContainer}>
-          {user ? (
-            <View style={styles.formContainer}>
-              {error && (
-                <Text style={styles.errorMessage}>{error}</Text>
-              )}
-
-              <View style={styles.ratingSection}>
-                <Text style={styles.ratingLabel}>Tu calificación:</Text>
-                <View style={styles.ratingButtons}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <TouchableOpacity
-                      key={star}
-                      onPress={() => setRating(star)}
-                    >
-                      <Ionicons
-                        name={star <= rating ? 'star' : 'star-outline'}
-                        size={22}
-                        color={
-                          star <= rating ? Colors.WARNING : Colors.STONE_300
-                        }
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Escribe tu opinión..."
-                  placeholderTextColor={Colors.TEXT_LIGHT}
-                  value={newComment}
-                  onChangeText={setNewComment}
-                  editable={!submitting}
-                  multiline
-                  maxLength={500}
-                />
-                <TouchableOpacity
-                  onPress={handleSubmit}
-                  disabled={!newComment.trim() || submitting}
-                  style={[
-                    styles.sendButton,
-                    (!newComment.trim() || submitting) && styles.sendButtonDisabled,
-                  ]}
-                >
-                  <Ionicons
-                    name="send"
-                    size={18}
-                    color={
-                      newComment.trim() && !submitting ? '#fff' : Colors.STONE_300
-                    }
-                  />
-                </TouchableOpacity>
-              </View>
+      <View style={styles.mainContent}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          {/* Comments List */}
+          {loading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={Colors.PRIMARY} />
+              <Text style={styles.loadingText}>Cargando comentarios...</Text>
             </View>
           ) : (
-            <View style={styles.notAuthContainer}>
-              <Text style={styles.notAuthText}>
-                Debes iniciar sesión para dejar un comentario.
-              </Text>
-              <TouchableOpacity
-                onPress={() => router.replace('/(auth)/login')}
-                style={styles.loginLink}
-              >
-                <Text style={styles.loginLinkText}>Iniciar Sesión</Text>
-              </TouchableOpacity>
-            </View>
+            <FlatList
+              data={comments}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderCommentItem}
+              contentContainerStyle={styles.listContent}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>Aún no hay comentarios.</Text>
+                  <Text style={styles.emptySubtext}>¡Sé el primero!</Text>
+                </View>
+              }
+              scrollEnabled
+            />
           )}
-        </View>
-      </KeyboardAvoidingView>
+
+          {/* Comment Input */}
+          <View style={styles.inputContainer}>
+            {user ? (
+              <View style={styles.formContainer}>
+                {error && (
+                  <Text style={styles.errorMessage}>{error}</Text>
+                )}
+
+                <View style={styles.ratingSection}>
+                  <Text style={styles.ratingLabel}>Tu calificación:</Text>
+                  <View style={styles.ratingButtons}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <TouchableOpacity
+                        key={star}
+                        onPress={() => setRating(star)}
+                      >
+                        <Ionicons
+                          name={star <= rating ? 'star' : 'star-outline'}
+                          size={22}
+                          color={
+                            star <= rating ? Colors.WARNING : Colors.STONE_300
+                          }
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Escribe tu opinión..."
+                    placeholderTextColor={Colors.TEXT_LIGHT}
+                    value={newComment}
+                    onChangeText={setNewComment}
+                    editable={!submitting}
+                    multiline
+                    maxLength={500}
+                  />
+                  <TouchableOpacity
+                    onPress={handleSubmit}
+                    disabled={!newComment.trim() || submitting}
+                    style={[
+                      styles.sendButton,
+                      (!newComment.trim() || submitting) && styles.sendButtonDisabled,
+                    ]}
+                  >
+                    <Ionicons
+                      name="send"
+                      size={18}
+                      color={
+                        newComment.trim() && !submitting ? '#fff' : Colors.STONE_300
+                      }
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.notAuthContainer}>
+                <Text style={styles.notAuthText}>
+                  Debes iniciar sesión para dejar un comentario.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.replace('/(auth)/login')}
+                  style={styles.loginLink}
+                >
+                  <Text style={styles.loginLinkText}>Iniciar Sesión</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }
@@ -257,6 +259,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.STONE_50,
+  },
+  mainContent: {
+    flex: 1,
   },
   keyboardView: {
     flex: 1,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius } from '@/constants';
 
@@ -86,8 +87,10 @@ export function GlobalHeader({
   onLoginPress,
   onRegisterPress,
 }: GlobalHeaderProps) {
+  const insets = useSafeAreaInsets();
+  
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* LEFT SIDE: Back button or title */}
       <View style={styles.leftContent}>
         {back ? (

@@ -38,36 +38,36 @@ export default function LegendDetailScreen() {
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
+    const fetchLegend = async () => {
+      if (!id) {
+        setError('No se recibió ID de la leyenda');
+        setLoading(false);
+        return;
+      }
+
+      const numericId = parseInt(id);
+      if (isNaN(numericId) || numericId <= 0) {
+        setError(`ID inválido: "${id}"`);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await axios.get(`${API_URL}/api/leyendas/${numericId}`);
+        setLegend(response.data);
+      } catch (err: any) {
+        console.error('Error al cargar leyenda:', err);
+        setError(err.response?.data?.error || err.message || 'Error al cargar la leyenda');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchLegend();
   }, [id]);
-
-  const fetchLegend = async () => {
-    if (!id) {
-      setError('No se recibió ID de la leyenda');
-      setLoading(false);
-      return;
-    }
-
-    const numericId = parseInt(id);
-    if (isNaN(numericId) || numericId <= 0) {
-      setError(`ID inválido: "${id}"`);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.get(`${API_URL}/api/leyendas/${numericId}`);
-      setLegend(response.data);
-    } catch (err: any) {
-      console.error('Error al cargar leyenda:', err);
-      setError(err.response?.data?.error || err.message || 'Error al cargar la leyenda');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDemoDownload = async () => {
     if (!legend) return;
@@ -170,56 +170,58 @@ export default function LegendDetailScreen() {
         user={user}
       />
 
-      <ScrollView scrollEnabled style={styles.scrollView}>
-        {/* Hero Image - now BELOW header (not absolute over) */}
-        <View style={styles.heroContainer}>
-          <Image source={{ uri: legend.imagen_url }} style={styles.heroImage} />
-          <View style={styles.heroOverlay} />
+      <View style={styles.mainContent}>
+        <ScrollView scrollEnabled style={styles.scrollView}>
+          {/* Hero Image - now BELOW header (not absolute over) */}
+          <View style={styles.heroContainer}>
+            <Image source={{ uri: legend.imagen_url }} style={styles.heroImage} />
+            <View style={styles.heroOverlay} />
+          </View>
+
+          {/* Description */}
+          <View style={styles.contentContainer}>
+            <Text style={styles.description}>{legend.descripcion}</Text>
+          </View>
+        </ScrollView>
+
+        {/* Fixed Bottom Actions */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            onPress={handleDemoDownload}
+            disabled={downloading}
+            style={styles.demoButton}
+          >
+            {downloading ? (
+              <ActivityIndicator size="small" color={Colors.PRIMARY_900} />
+            ) : (
+              <>
+                <Ionicons name="game-controller" size={20} color={Colors.PRIMARY_900} />
+                <Text style={styles.demoButtonText}>Jugar Demo</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <Button
+            title="Completo ($2)"
+            onPress={handleFullClick}
+            icon={<Ionicons name="card" size={20} color="#fff" />}
+            style={styles.fullButton}
+          />
         </View>
 
-        {/* Description */}
-        <View style={styles.contentContainer}>
-          <Text style={styles.description}>{legend.descripcion}</Text>
-        </View>
-      </ScrollView>
-
-      {/* Fixed Bottom Actions */}
-      <View style={styles.actionsContainer}>
         <TouchableOpacity
-          onPress={handleDemoDownload}
-          disabled={downloading}
-          style={styles.demoButton}
+          onPress={() =>
+            router.push({
+              pathname: '/(main)/comments',
+              params: { id: legend.id.toString() },
+            })
+          }
+          style={styles.commentsButton}
         >
-          {downloading ? (
-            <ActivityIndicator size="small" color={Colors.PRIMARY_900} />
-          ) : (
-            <>
-              <Ionicons name="game-controller" size={20} color={Colors.PRIMARY_900} />
-              <Text style={styles.demoButtonText}>Jugar Demo</Text>
-            </>
-          )}
+          <Ionicons name="chatbubble-ellipses" size={20} color={Colors.STONE_800} />
+          <Text style={styles.commentsButtonText}>Ver Comentarios</Text>
         </TouchableOpacity>
-
-        <Button
-          title="Completo ($2)"
-          onPress={handleFullClick}
-          icon={<Ionicons name="card" size={20} color="#fff" />}
-          style={styles.fullButton}
-        />
       </View>
-
-      <TouchableOpacity
-        onPress={() =>
-          router.push({
-            pathname: '/(main)/comments',
-            params: { id: legend.id.toString() },
-          })
-        }
-        style={styles.commentsButton}
-      >
-        <Ionicons name="chatbubble-ellipses" size={20} color={Colors.STONE_800} />
-        <Text style={styles.commentsButtonText}>Ver Comentarios</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -228,6 +230,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.STONE_50,
+  },
+  mainContent: {
+    flex: 1,
+    position: 'relative',
   },
   scrollView: {
     flex: 1,

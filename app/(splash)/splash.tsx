@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   View,
-  Image,
   StyleSheet,
   Animated,
   Easing,
@@ -15,7 +14,7 @@ const colors = {
 
 export default function SplashScreen() {
   const router = useRouter();
-  const spinValue = new Animated.Value(0);
+  const spinValue = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
     // Animación del logo giratorio

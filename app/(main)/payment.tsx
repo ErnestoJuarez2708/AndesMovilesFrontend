@@ -71,19 +71,21 @@ export default function PaymentScreen() {
           onBackPress={handleBackPress}
           user={user}
         />
-        <View style={styles.successContainer}>
-          <View style={styles.successIcon}>
-            <Ionicons name="checkmark-circle" size={60} color={Colors.SUCCESS} />
+        <View style={styles.mainContent}>
+          <View style={styles.successContainer}>
+            <View style={styles.successIcon}>
+              <Ionicons name="checkmark-circle" size={60} color={Colors.SUCCESS} />
+            </View>
+            <Text style={styles.successTitle}>¡Pago Exitoso!</Text>
+            <Text style={styles.successMessage}>
+              Gracias por tu compra. La descarga del juego completo ha comenzado.
+            </Text>
+            <Button
+              title="Volver al Catálogo"
+              onPress={() => router.replace('/(main)/catalog')}
+              style={styles.successButton}
+            />
           </View>
-          <Text style={styles.successTitle}>¡Pago Exitoso!</Text>
-          <Text style={styles.successMessage}>
-            Gracias por tu compra. La descarga del juego completo ha comenzado.
-          </Text>
-          <Button
-            title="Volver al Catálogo"
-            onPress={() => router.replace('/(main)/catalog')}
-            style={styles.successButton}
-          />
         </View>
       </View>
     );
@@ -98,95 +100,97 @@ export default function PaymentScreen() {
         user={user}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Summary */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>Total a pagar</Text>
-          <Text style={styles.summaryAmount}>$2.00 USD</Text>
-          <Text style={styles.summaryProduct}>
-            Juego Completo: La Leyenda del Lago Titicaca
-          </Text>
-        </View>
-
-        {/* Payment Form */}
-        <View style={styles.formContainer}>
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Número de Tarjeta</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="card" size={18} color={Colors.STONE_300} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="0000 0000 0000 0000"
-                placeholderTextColor={Colors.STONE_300}
-                value={cardNumber}
-                onChangeText={formatCardNumber}
-                keyboardType="numeric"
-                maxLength={19}
-                editable={!isProcessing}
-              />
-            </View>
+      <View style={styles.mainContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Summary */}
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryLabel}>Total a pagar</Text>
+            <Text style={styles.summaryAmount}>$2.00 USD</Text>
+            <Text style={styles.summaryProduct}>
+              Juego Completo: La Leyenda del Lago Titicaca
+            </Text>
           </View>
 
-          <View style={styles.rowContainer}>
-            <View style={[styles.formGroup, { flex: 1 }]}>
-              <Text style={styles.label}>Vencimiento</Text>
+          {/* Payment Form */}
+          <View style={styles.formContainer}>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Número de Tarjeta</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="card" size={18} color={Colors.STONE_300} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="0000 0000 0000 0000"
+                  placeholderTextColor={Colors.STONE_300}
+                  value={cardNumber}
+                  onChangeText={formatCardNumber}
+                  keyboardType="numeric"
+                  maxLength={19}
+                  editable={!isProcessing}
+                />
+              </View>
+            </View>
+
+            <View style={styles.rowContainer}>
+              <View style={[styles.formGroup, { flex: 1 }]}>
+                <Text style={styles.label}>Vencimiento</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="MM/YY"
+                  placeholderTextColor={Colors.STONE_300}
+                  value={expiry}
+                  onChangeText={formatExpiry}
+                  keyboardType="numeric"
+                  maxLength={5}
+                  editable={!isProcessing}
+                />
+              </View>
+
+              <View style={[styles.formGroup, { flex: 1, marginLeft: 16 }]}>
+                <Text style={styles.label}>CVC</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="123"
+                  placeholderTextColor={Colors.STONE_300}
+                  value={cvc}
+                  onChangeText={setCvc}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  secureTextEntry
+                  editable={!isProcessing}
+                />
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Nombre en la tarjeta</Text>
               <TextInput
                 style={styles.input}
-                placeholder="MM/YY"
+                placeholder="Juan Pérez"
                 placeholderTextColor={Colors.STONE_300}
-                value={expiry}
-                onChangeText={formatExpiry}
-                keyboardType="numeric"
-                maxLength={5}
+                value={cardHolder}
+                onChangeText={setCardHolder}
                 editable={!isProcessing}
               />
             </View>
 
-            <View style={[styles.formGroup, { flex: 1, marginLeft: 16 }]}>
-              <Text style={styles.label}>CVC</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="123"
-                placeholderTextColor={Colors.STONE_300}
-                value={cvc}
-                onChangeText={setCvc}
-                keyboardType="numeric"
-                maxLength={4}
-                secureTextEntry
-                editable={!isProcessing}
-              />
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Nombre en la tarjeta</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Juan Pérez"
-              placeholderTextColor={Colors.STONE_300}
-              value={cardHolder}
-              onChangeText={setCardHolder}
-              editable={!isProcessing}
+            <Button
+              title={isProcessing ? 'Procesando...' : 'Pagar $2.00'}
+              onPress={handlePayment}
+              loading={isProcessing}
+              disabled={isProcessing}
+              icon={!isProcessing && <Ionicons name="lock-closed" size={18} color="#fff" />}
+              style={styles.payButton}
             />
           </View>
 
-          <Button
-            title={isProcessing ? 'Procesando...' : 'Pagar $2.00'}
-            onPress={handlePayment}
-            loading={isProcessing}
-            disabled={isProcessing}
-            icon={!isProcessing && <Ionicons name="lock-closed" size={18} color="#fff" />}
-            style={styles.payButton}
-          />
-        </View>
-
-        {/* Card brands */}
-        <View style={styles.cardBrands}>
-          <View style={styles.brandPlaceholder} />
-          <View style={styles.brandPlaceholder} />
-          <View style={styles.brandPlaceholder} />
-        </View>
-      </ScrollView>
+          {/* Card brands */}
+          <View style={styles.cardBrands}>
+            <View style={styles.brandPlaceholder} />
+            <View style={styles.brandPlaceholder} />
+            <View style={styles.brandPlaceholder} />
+          </View>
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -195,6 +199,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.STONE_50,
+  },
+  mainContent: {
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
