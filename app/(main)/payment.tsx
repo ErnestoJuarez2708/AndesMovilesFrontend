@@ -14,7 +14,9 @@ import {
   TextInput,
   View,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
@@ -249,8 +251,14 @@ export default function PaymentScreen() {
         user={user}
       />
 
-      <View style={styles.mainContent}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Error Banner */}
           {errorMessage && (
             <View style={styles.errorBanner}>
@@ -347,7 +355,7 @@ export default function PaymentScreen() {
             <View style={styles.brandPlaceholder} />
           </View>
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -356,6 +364,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.STONE_50,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   mainContent: {
     flex: 1,

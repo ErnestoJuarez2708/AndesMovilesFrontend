@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   Text,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +20,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { login } = useAuth();
+  const scrollRef = useRef<ScrollView>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -55,10 +58,16 @@ export default function LoginScreen() {
         onRegisterPress={() => router.push('/(auth)/register')}
       />
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
       >
+        <ScrollView 
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         <View style={styles.content}>
           <View style={styles.card}>
             <View style={styles.titleContainer}>
@@ -128,6 +137,7 @@ export default function LoginScreen() {
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -136,6 +146,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.STONE_50,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
