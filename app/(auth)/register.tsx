@@ -22,7 +22,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 export default function RegisterScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const { login } = useAuth();
+  const { login, logout, user } = useAuth();
   const scrollRef = useRef<ScrollView>(null);
   const [formData, setFormData] = useState({
     username: '',
@@ -111,6 +111,11 @@ export default function RegisterScreen() {
           } else {
             router.replace('/(splash)/splash');
           }
+        }}
+        user={user}
+        onLogout={() => {
+          logout();
+          router.replace('/(auth)/login');
         }}
         onLoginPress={() => router.replace('/(auth)/login')}
         onRegisterPress={() => router.replace('/(auth)/register')}

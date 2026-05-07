@@ -56,13 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         timeout: 10000, // 10 segundos de timeout
       });
 
-      const { token } = response.data;
+      const { token, user: userData } = response.data;
 
       await AsyncStorage.setItem('token', token);
       setToken(token);
 
       setUser({
-        email: email
+        id: userData?.id,
+        email: userData?.email || email,
+        nombre: userData?.nombre
       });
 
     } catch (error: any) {

@@ -19,7 +19,7 @@ import { Colors, Spacing, BorderRadius } from '@/constants';
 export default function LoginScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const { login } = useAuth();
+  const { login, logout, user } = useAuth();
   const scrollRef = useRef<ScrollView>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,6 +54,11 @@ export default function LoginScreen() {
       <GlobalHeader
         back={true}
         onBackPress={handleBackPress}
+        user={user}
+        onLogout={() => {
+          logout();
+          router.replace('/(auth)/login');
+        }}
         onLoginPress={() => router.replace('/(auth)/login')}
         onRegisterPress={() => router.push('/(auth)/register')}
       />

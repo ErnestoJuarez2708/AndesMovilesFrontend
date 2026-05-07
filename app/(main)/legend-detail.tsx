@@ -9,6 +9,9 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,12 +22,109 @@ import { GlobalHeader } from '@/components/ui/GlobalHeader';
 import { Colors, Spacing, BorderRadius } from '@/constants';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const { width: screenWidth } = Dimensions.get('window');
 
 interface Legend {
   id: number;
   titulo: string;
   descripcion: string;
   imagen_url: string;
+  autor_referencia?: string;
+  youtube_video_id?: string;
+}
+
+/**
+ * Component to render description with drop cap styling
+ * First letter of each paragraph is large and orange
+ */
+function RenderDescriptionWithDropCap({ text }: { text: string }) {
+  if (!text) return null;
+
+  // Split by paragraph (double newline or specific markers)
+  const paragraphs = text.split(/\n\n+|\r\n\r\n+/).filter(p => p.trim());
+
+  return (
+    <>
+      {paragraphs.map((para, idx) => {
+        const trimmed = para.trim();
+        if (!trimmed) return null;
+
+        const firstChar = trimmed[0];
+        const rest = trimmed.slice(1);
+
+        return (
+          <View key={idx} style={styles.paragraphContainer}>
+            <View style={styles.dropCapContainer}>
+              <Text style={styles.dropCap}>{firstChar}</Text>
+              <Text style={styles.paragraphText}>{rest}</Text>
+            </View>
+          </View>
+        );
+      })}
+    </>
+  );
+}
+
+/**
+ * Extract YouTube video ID from various URL formats
+ */
+function extractYoutubeId(urlOrId: string): string | null {
+  if (!urlOrId) return null;
+
+  // If it's already just an ID (11 chars, alphanumeric + - _)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(urlOrId)) {
+    return urlOrId;
+  }
+
+  // Extract from various YouTube URL formats
+  let match;
+  
+  // Format: https://youtube.com/shorts/VIDEO_ID or https://www.youtube.com/shorts/VIDEO_ID
+  match = urlOrId.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+  if (match) return match[1];
+
+  // Format: https://youtu.be/VIDEO_ID
+  match = urlOrId.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (match) return match[1];
+
+  // Format: https://www.youtube.com/watch?v=VIDEO_ID
+  match = urlOrId.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/);
+  if (match) return match[1];
+
+  // Format: youtube.com/watch?v=VIDEO_ID (without https://)
+  match = urlOrId.match(/v=([a-zA-Z0-9_-]{11})/);
+  if (match) return match[1];
+
+  return null;
+}
+
+/**
+ * YouTube Short video player using WebView
+ */
+function YouTubeShortPlayer({ urlOrId }: { urlOrId: string }) {
+  const videoId = extractYoutubeId(urlOrId);
+
+  if (!videoId) {
+    console.warn('Invalid YouTube URL or ID:', urlOrId);
+    return null;
+  }
+
+  return (
+    <View style={styles.youtubeContainer}>
+      <TouchableOpacity 
+        style={styles.youtubePlaceholder}
+        onPress={() => {
+          const url = `https://www.youtube.com/watch?v=${videoId}`;
+          Linking.openURL(url);
+        }}
+      >
+        <View style={styles.youtubePlayButton}>
+          <Ionicons name="play" size={60} color="#fff" />
+        </View>
+        <Text style={styles.youtubePlayText}>Tocar para ver video</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 export default function LegendDetailScreen() {
@@ -58,6 +158,7 @@ export default function LegendDetailScreen() {
       try {
         const response = await axios.get(`${API_URL}/api/leyendas/${numericId}`);
         setLegend(response.data);
+        console.log('Legend loaded:', response.data);
       } catch (err: any) {
         console.error('Error al cargar leyenda:', err);
         setError(err.response?.data?.error || err.message || 'Error al cargar la leyenda');
@@ -136,7 +237,7 @@ export default function LegendDetailScreen() {
       <View style={styles.container}>
         <GlobalHeader
           back={true}
-          title={legend?.titulo || 'Cargando...'}
+          title="Cargando..."
           onBackPress={handleBackPress}
           user={user}
         />
@@ -153,6 +254,7 @@ export default function LegendDetailScreen() {
       <View style={styles.container}>
         <GlobalHeader
           back={true}
+          title="Error"
           onBackPress={handleBackPress}
           user={user}
         />
@@ -169,7 +271,7 @@ export default function LegendDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <GlobalHeader
         back={true}
         title={legend.titulo}
@@ -177,74 +279,115 @@ export default function LegendDetailScreen() {
         user={user}
       />
 
-      <View style={styles.mainContent}>
-        <ScrollView scrollEnabled style={styles.scrollView}>
-          {/* Hero Image - now BELOW header (not absolute over) */}
+      <View style={styles.mainContainer}>
+        {/* Scrollable Content */}
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContentContainer}
+          showsVerticalScrollIndicator={true}
+        >
+          {/* Hero Image */}
           <View style={styles.heroContainer}>
-            <Image source={{ uri: legend.imagen_url }} style={styles.heroImage} />
+            <Image 
+              source={{ uri: legend.imagen_url }} 
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
             <View style={styles.heroOverlay} />
           </View>
 
-          {/* Description */}
+          {/* Content Container with Dark Background */}
           <View style={styles.contentContainer}>
-            <Text style={styles.description}>{legend.descripcion}</Text>
+            {/* Tags */}
+            <View style={styles.tagsContainer}>
+              <View style={styles.tagHistoria}>
+                <Ionicons name="bookmark" size={12} color={Colors.WARNING} />
+                <Text style={styles.tagText}>HISTORIA COMPLETA</Text>
+              </View>
+              <View style={styles.tagBolivia}>
+                <Text style={styles.tagBoliviaText}>BOLIVIA</Text>
+              </View>
+            </View>
+
+            {/* Title and Subtitle */}
+            <Text style={styles.title}>{legend.titulo}</Text>
+            <Text style={styles.subtitle}>{legend.autor_referencia || 'La leyenda ancestral'}</Text>
+
+            {/* YouTube Shorts Video Player */}
+            {legend.youtube_video_id && (
+              <YouTubeShortPlayer urlOrId={legend.youtube_video_id} />
+            )}
+
+            {/* Description with Drop Cap styling */}
+            <View style={styles.descriptionContainer}>
+              <RenderDescriptionWithDropCap text={legend.descripcion} />
+            </View>
+
+            {/* Extra padding to prevent overlap with bottom buttons */}
+            <View style={styles.bottomPadding} />
           </View>
         </ScrollView>
 
-        {/* Fixed Bottom Actions */}
-        <View style={styles.actionsContainer}>
+        {/* Fixed Bottom Actions Bar */}
+        <View style={styles.actionsBar}>
+          {/* Top Row: Demo and Comprar buttons */}
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              onPress={handleDemoDownload}
+              disabled={downloading}
+              style={styles.demoButton}
+            >
+              {downloading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="game-controller" size={18} color="#fff" />
+                  <Text style={styles.demoButtonText}>Demo</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <Button
+              title="Comprar $2"
+              onPress={handleFullClick}
+              icon={<Ionicons name="bag" size={18} color="#fff" />}
+              style={styles.comprarButton}
+            />
+          </View>
+
+          {/* Bottom Row: Comunidad y Reseñas button */}
           <TouchableOpacity
-            onPress={handleDemoDownload}
-            disabled={downloading}
-            style={styles.demoButton}
+            onPress={() =>
+              router.push({
+                pathname: '/(main)/comments',
+                params: { id: legend.id.toString() },
+              })
+            }
+            style={styles.communityButton}
           >
-            {downloading ? (
-              <ActivityIndicator size="small" color={Colors.PRIMARY_900} />
-            ) : (
-              <>
-                <Ionicons name="game-controller" size={20} color={Colors.PRIMARY_900} />
-                <Text style={styles.demoButtonText}>Jugar Demo</Text>
-              </>
-            )}
+            <Ionicons name="chatbubble-ellipses" size={18} color="#fff" />
+            <Text style={styles.communityButtonText}>Comunidad y reseñas</Text>
           </TouchableOpacity>
-
-          <Button
-            title="Completo ($2)"
-            onPress={handleFullClick}
-            icon={<Ionicons name="card" size={20} color="#fff" />}
-            style={styles.fullButton}
-          />
         </View>
-
-        <TouchableOpacity
-          onPress={() =>
-            router.push({
-              pathname: '/(main)/comments',
-              params: { id: legend.id.toString() },
-            })
-          }
-          style={styles.commentsButton}
-        >
-          <Ionicons name="chatbubble-ellipses" size={20} color={Colors.STONE_800} />
-          <Text style={styles.commentsButtonText}>Ver Comentarios</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.STONE_50,
+    backgroundColor: '#000',
   },
-  mainContent: {
+  mainContainer: {
     flex: 1,
-    position: 'relative',
+    flexDirection: 'column',
   },
   scrollView: {
     flex: 1,
-    paddingBottom: 160,
+  },
+  scrollContentContainer: {
+    paddingBottom: 0,
   },
   centerContainer: {
     flex: 1,
@@ -254,7 +397,8 @@ const styles = StyleSheet.create({
   },
   heroContainer: {
     position: 'relative',
-    height: 320,
+    width: '100%',
+    height: 280,
     backgroundColor: Colors.STONE_300,
     overflow: 'hidden',
   },
@@ -264,17 +408,122 @@ const styles = StyleSheet.create({
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(28, 25, 23, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
   },
   contentContainer: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.xl,
+    backgroundColor: '#000',
   },
-  description: {
-    fontSize: 16,
-    color: Colors.STONE_700,
-    lineHeight: 24,
+  tagsContainer: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+    alignItems: 'center',
+  },
+  tagHistoria: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: 'rgba(255, 140, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: Colors.WARNING,
+    borderRadius: BorderRadius.full,
+  },
+  tagText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.WARNING,
+    letterSpacing: 0.5,
+  },
+  tagBolivia: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: 'rgba(150, 150, 150, 0.3)',
+    borderRadius: BorderRadius.full,
+  },
+  tagBoliviaText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.STONE_400,
+    letterSpacing: 0.5,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: Spacing.xs,
     fontFamily: 'Georgia',
+  },
+  subtitle: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: Colors.WARNING,
+    marginBottom: Spacing.lg,
+    fontFamily: 'Georgia',
+  },
+  youtubeContainer: {
+    width: '100%',
+    marginBottom: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    backgroundColor: '#1a1a1a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 300,
+  },
+  youtubePlayButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 140, 0, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+  },
+  youtubePlayText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: Spacing.sm,
+  },
+  youtubePlaceholder: {
+    width: '100%',
+    height: 300,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1a1a1a',
+  },
+  descriptionContainer: {
+    marginBottom: Spacing.xl,
+  },
+  paragraphContainer: {
+    marginBottom: Spacing.lg,
+  },
+  dropCapContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  dropCap: {
+    fontSize: 52,
+    fontWeight: '700',
+    color: Colors.WARNING,
+    lineHeight: 52,
+    marginRight: Spacing.sm,
+    fontFamily: 'Georgia',
+    marginTop: -6,
+  },
+  paragraphText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#d1d5db',
+    lineHeight: 22,
+    fontWeight: '400',
+  },
+  bottomPadding: {
+    height: 30,
   },
   loadingText: {
     marginTop: Spacing.md,
@@ -290,23 +539,19 @@ const styles = StyleSheet.create({
   retryButton: {
     marginTop: Spacing.lg,
   },
-  actionsContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    gap: Spacing.md,
+  /* Fixed Actions Bar */
+  actionsBar: {
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(100, 100, 100, 0.3)',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: Colors.STONE_200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    gap: Spacing.md,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    width: '100%',
   },
   demoButton: {
     flex: 1,
@@ -314,40 +559,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.PRIMARY_100,
+    backgroundColor: 'rgba(80, 80, 80, 0.9)',
     borderRadius: BorderRadius.lg,
     gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(150, 150, 150, 0.3)',
   },
   demoButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.PRIMARY_900,
+    color: '#fff',
   },
-  fullButton: {
+  comprarButton: {
     flex: 1,
   },
-  commentsButton: {
-    position: 'absolute',
-    bottom: 80,
-    right: Spacing.lg,
+  communityButton: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    backgroundColor: '#fff',
-    borderRadius: BorderRadius.full,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.STONE_200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: 'rgba(150, 150, 150, 0.3)',
   },
-  commentsButtonText: {
+  communityButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.STONE_800,
+    color: '#fff',
   },
 });

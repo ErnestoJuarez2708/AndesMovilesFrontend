@@ -25,7 +25,7 @@ interface GlobalHeaderProps {
   /**
    * Current authenticated user
    */
-  user?: { email: string } | null;
+  user?: { id?: number; email: string; nombre?: string } | null;
 
   /**
    * Callback when logout button pressed
@@ -111,51 +111,51 @@ export function GlobalHeader({
         </View>
       )}
 
-      {/* RIGHT SIDE: Auth options or user info */}
-      <View style={styles.rightContent}>
-        {user ? (
-          <View style={styles.userSection}>
-            {/* User badge */}
-            <View style={styles.userBadge}>
-              <Ionicons
-                name="person-circle"
-                size={20}
-                color={Colors.PRIMARY_100}
-              />
-              <Text style={styles.userEmail} numberOfLines={1}>
-                {user.email}
-              </Text>
-            </View>
+       {/* RIGHT SIDE: Auth options or user info */}
+       <View style={styles.rightContent}>
+         {user ? (
+           <View style={styles.userSection}>
+             {/* User badge */}
+             <View style={styles.userBadge}>
+               <Ionicons
+                 name="person-circle"
+                 size={20}
+                 color={Colors.PRIMARY_100}
+               />
+               <Text style={styles.userEmail} numberOfLines={1}>
+                 {user.nombre || user.email}
+               </Text>
+             </View>
 
-            {/* Logout button */}
-            {onLogout && (
-              <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
-                <Ionicons
-                  name="log-out"
-                  size={18}
-                  color={Colors.PRIMARY_100}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : (
-          <View style={styles.authLinks}>
-            {onLoginPress && (
-              <TouchableOpacity onPress={onLoginPress}>
-                <Text style={styles.authLinkText}>Iniciar Sesión</Text>
-              </TouchableOpacity>
-            )}
+             {/* Logout button */}
+             {onLogout && (
+               <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
+                 <Ionicons
+                   name="log-out"
+                   size={18}
+                   color={Colors.PRIMARY_100}
+                 />
+               </TouchableOpacity>
+             )}
+           </View>
+         ) : (
+           <View style={styles.authLinks}>
+             {onLoginPress && (
+               <TouchableOpacity onPress={onLoginPress}>
+                 <Text style={styles.authLinkText}>Iniciar Sesión</Text>
+               </TouchableOpacity>
+             )}
 
-            <Text style={styles.authDivider}>|</Text>
+             <Text style={styles.authDivider}>|</Text>
 
-            {onRegisterPress && (
-              <TouchableOpacity onPress={onRegisterPress}>
-                <Text style={styles.authLinkText}>Registrarse</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-      </View>
+             {onRegisterPress && (
+               <TouchableOpacity onPress={onRegisterPress}>
+                 <Text style={styles.authLinkText}>Registrarse</Text>
+               </TouchableOpacity>
+             )}
+           </View>
+         )}
+       </View>
     </View>
   );
 }
