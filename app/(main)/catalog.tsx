@@ -23,6 +23,7 @@ interface Legend {
   titulo: string;
   descripcion: string;
   imagen_url: string;
+  categoria?: string; // 'destacado' o 'leyenda'
 }
 
 export default function CatalogScreen() {
@@ -126,7 +127,14 @@ export default function CatalogScreen() {
       />
 
       <View style={styles.mainContent}>
-        <Text style={styles.subtitle}>
+        {/* Section Title */}
+        <View style={styles.sectionHeader}>
+          <Ionicons name="location" size={24} color={Colors.PRIMARY_900} />
+          <Text style={styles.sectionTitle}>Leyendas de La Paz</Text>
+        </View>
+
+        {/* Section Description */}
+        <Text style={styles.sectionDescription}>
           Descubre las historias milenarias, mitos y tradiciones que envuelven a la ciudad maravilla y sus alrededores.
         </Text>
 
@@ -140,9 +148,10 @@ export default function CatalogScreen() {
           <FlatList
             data={legends}
             keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <LegendCard
                 legend={item}
+                isHighlighted={index === 0}
                 onPress={() => router.push({
                   pathname: '/(main)/legend-detail',
                   params: { id: item.id.toString() },
@@ -156,6 +165,11 @@ export default function CatalogScreen() {
             }
           />
         )}
+
+        {/* Footer Text */}
+        {legends.length > 0 && (
+          <Text style={styles.footerText}>Más sectores próximamente...</Text>
+        )}
       </View>
     </View>
   );
@@ -163,10 +177,14 @@ export default function CatalogScreen() {
 
 interface LegendCardProps {
   legend: Legend;
+  isHighlighted?: boolean;
   onPress: () => void;
 }
 
-function LegendCard({ legend, onPress }: LegendCardProps) {
+function LegendCard({ legend, isHighlighted = false, onPress }: LegendCardProps) {
+  const tagText = isHighlighted ? 'DESTACADO' : 'LEYENDA';
+  const tagColor = isHighlighted ? Colors.WARNING : Colors.PRIMARY_100;
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -180,14 +198,14 @@ function LegendCard({ legend, onPress }: LegendCardProps) {
       <View style={styles.cardOverlay} />
       <View style={styles.cardContent}>
         <View style={styles.cardTextContainer}>
-          <Text style={styles.cardTag}>Leyenda</Text>
+          <Text style={[styles.cardTag, { color: tagColor }]}>{tagText}</Text>
           <Text style={styles.cardTitle}>{legend.titulo}</Text>
-          <Text style={styles.cardDescription} numberOfLines={2}>
-            {legend.descripcion.substring(0, 120)}...
+          <Text style={styles.cardDescription} numberOfLines={1}>
+            {legend.descripcion}
           </Text>
         </View>
         <View style={styles.cardButton}>
-          <Ionicons name="chevron-forward" size={20} color="#fff" />
+          <Ionicons name="chevron-forward" size={24} color="#fff" />
         </View>
       </View>
     </TouchableOpacity>
@@ -201,7 +219,7 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    backgroundColor: Colors.STONE_100,
+    backgroundColor: Colors.STONE_50,
   },
   centerContainer: {
     flex: 1,
@@ -209,12 +227,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
   },
-  subtitle: {
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.PRIMARY_900,
+    fontFamily: 'Georgia',
+  },
+  sectionDescription: {
     fontSize: 14,
     color: Colors.STONE_600,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
     paddingBottom: Spacing.lg,
+    lineHeight: 20,
   },
   loadingText: {
     marginTop: Spacing.md,
@@ -242,7 +274,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xl,
-    gap: Spacing.xl,
+    gap: Spacing.lg,
   },
   emptyContainer: {
     flex: 1,
@@ -259,6 +291,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.STONE_400,
   },
+  footerText: {
+    fontSize: 14,
+    color: Colors.TEXT_LIGHT,
+    textAlign: 'center',
+    paddingVertical: Spacing.lg,
+  },
   cardContainer: {
     height: 224,
     borderRadius: BorderRadius.lg,
@@ -268,7 +306,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 5,
-    marginVertical: Spacing.xs,
   },
   cardImage: {
     ...StyleSheet.absoluteFillObject,
@@ -293,13 +330,12 @@ const styles = StyleSheet.create({
   },
   cardTag: {
     fontSize: 11,
-    fontWeight: '600',
-    color: Colors.PRIMARY_100,
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    letterSpacing: 1,
     marginBottom: Spacing.xs,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     color: '#fff',
     marginBottom: Spacing.xs,
@@ -311,10 +347,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   cardButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(100, 100, 100, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: Spacing.lg,

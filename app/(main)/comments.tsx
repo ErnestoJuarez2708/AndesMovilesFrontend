@@ -151,11 +151,12 @@ export default function CommentsScreen() {
         user={user}
       />
 
-      <View style={styles.mainContent}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={0}
+      >
+        <View style={styles.mainContent}>
           {/* Comments List */}
           {loading ? (
             <View style={styles.centerContainer}>
@@ -249,8 +250,8 @@ export default function CommentsScreen() {
               </View>
             )}
           </View>
-        </KeyboardAvoidingView>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }

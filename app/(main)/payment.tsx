@@ -2,27 +2,81 @@ import { Button } from '@/components/ui/Button';
 import { BorderRadius, Colors, Spacing } from '@/constants';
 import { GlobalHeader } from '@/components/ui/GlobalHeader';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter, useNavigation, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
-import React, { useState } from 'react';
+import axios from 'axios';
+import * as Linking from 'expo-linking';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function PaymentScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const params = useLocalSearchParams();
+  const microjuegoId = params?.microjuegoId as string;
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
   const [cardHolder, setCardHolder] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [downloadToken, setDownloadToken] = useState('');
+  const [isLoadingIntent, setIsLoadingIntent] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Crear payment intent al cargar la pantalla
+  useEffect(() => {
+    crearPaymentIntent();
+  }, [microjuegoId]);
+
+  const crearPaymentIntent = async () => {
+    try {
+      setIsLoadingIntent(true);
+      setErrorMessage('');
+      
+      if (!microjuegoId) {
+        throw new Error('ID del minijuego no encontrado');
+      }
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/pagos/crear-intent`,
+        { microjuego_id: microjuegoId },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data?.clientSecret) {
+        setClientSecret(response.data.clientSecret);
+      } else {
+        throw new Error('No se recibió clientSecret del servidor');
+      }
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || err.message || 'Error al crear el payment intent';
+      setErrorMessage(errorMsg);
+      Alert.alert('Error', errorMsg);
+    } finally {
+      setIsLoadingIntent(false);
+    }
+  };
 
   const formatCardNumber = (text: string) => {
     const cleaned = text.replace(/\s/g, '');
@@ -39,19 +93,84 @@ export default function PaymentScreen() {
     }
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!cardNumber.trim() || !expiry.trim() || !cvc.trim() || !cardHolder.trim()) {
-      alert('Por favor completa todos los campos');
+      Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
-    setIsProcessing(true);
+    if (!clientSecret) {
+      Alert.alert('Error', 'El payment intent no se creó correctamente. Intenta de nuevo.');
+      return;
+    }
 
-    // Simular procesamiento de pago
-    setTimeout(() => {
+    try {
+      setIsProcessing(true);
+      setErrorMessage('');
+
+      console.log('[handlePayment] Iniciando pago...');
+
+      // Llamar a /test-completar-compra para simular webhook
+      const response = await axios.post(
+        `${API_BASE_URL}/api/pagos/test-completar-compra`,
+        { microjuego_id: microjuegoId },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('[handlePayment] Respuesta del servidor:', response.data);
+
+      if (response.data?.download_token) {
+        console.log('[handlePayment] Token recibido:', response.data.download_token);
+        setDownloadToken(response.data.download_token);
+        setIsSuccess(true);
+        Alert.alert('✅ Pago Completado', 'Ahora puedes descargar el juego completo. Presiona el botón "Descargar Full"');
+      } else {
+        throw new Error('No se recibió el token de descarga');
+      }
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || err.message || 'Error al procesar el pago';
+      console.error('[handlePayment] Error:', errorMsg);
+      setErrorMessage(errorMsg);
+      Alert.alert('Error en el Pago', errorMsg);
+    } finally {
       setIsProcessing(false);
-      setIsSuccess(true);
-    }, 2000);
+    }
+  };
+
+  const handleDownloadFull = async () => {
+    if (!downloadToken) {
+      Alert.alert('Error', 'Token de descarga no disponible');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      console.log('[handleDownloadFull] Iniciando descarga con token:', downloadToken);
+      
+      // Crear URL de descarga
+      const downloadUrl = `${API_BASE_URL}/api/pagos/descargar-full?token=${downloadToken}`;
+      
+      console.log('📥 Abriendo URL:', downloadUrl);
+      
+      // Abrir URL directamente (navegador o app manager)
+      await Linking.openURL(downloadUrl);
+      
+      Alert.alert(
+        '✅ Descarga Iniciada',
+        'La descarga del APK ha comenzado. Revisa tu carpeta de Descargas.'
+      );
+    } catch (err: any) {
+      const errorMsg = err.message || 'Error al descargar el archivo';
+      console.error('❌ Error en descarga:', errorMsg);
+      Alert.alert('Error en Descarga', errorMsg);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleBackPress = () => {
@@ -61,6 +180,26 @@ export default function PaymentScreen() {
       router.replace('/(main)/catalog');
     }
   };
+
+  // Pantalla de loading del payment intent
+  if (isLoadingIntent) {
+    return (
+      <View style={styles.container}>
+        <GlobalHeader
+          back={true}
+          title="Pago Seguro"
+          onBackPress={handleBackPress}
+          user={user}
+        />
+        <View style={[styles.mainContent, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={Colors.PRIMARY_900} />
+          <Text style={{ marginTop: Spacing.lg, color: Colors.TEXT_LIGHT }}>
+            Preparando pago...
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -78,8 +217,20 @@ export default function PaymentScreen() {
             </View>
             <Text style={styles.successTitle}>¡Pago Exitoso!</Text>
             <Text style={styles.successMessage}>
-              Gracias por tu compra. La descarga del juego completo ha comenzado.
+              Gracias por tu compra. La descarga del juego completo está lista.
             </Text>
+            
+            {/* Botón Descargar Full */}
+            <Button
+              title={isProcessing ? 'Descargando...' : 'Descargar Full'}
+              onPress={handleDownloadFull}
+              loading={isProcessing}
+              disabled={isProcessing}
+              icon={!isProcessing && <Ionicons name="download" size={18} color="#fff" />}
+              style={styles.downloadButton}
+            />
+            
+            {/* Botón Volver */}
             <Button
               title="Volver al Catálogo"
               onPress={() => router.replace('/(main)/catalog')}
@@ -100,8 +251,22 @@ export default function PaymentScreen() {
         user={user}
       />
 
-      <View style={styles.mainContent}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Error Banner */}
+          {errorMessage && (
+            <View style={styles.errorBanner}>
+              <Ionicons name="alert-circle" size={18} color="#dc2626" />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          )}
+
           {/* Summary */}
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Total a pagar</Text>
@@ -190,7 +355,7 @@ export default function PaymentScreen() {
             <View style={styles.brandPlaceholder} />
           </View>
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -200,6 +365,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.STONE_50,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   mainContent: {
     flex: 1,
   },
@@ -207,6 +375,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.xl,
     paddingBottom: Spacing.xxl,
+  },
+  errorBanner: {
+    backgroundColor: '#fee2e2',
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: '#dc2626',
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#991b1b',
+    fontWeight: '500',
   },
   summaryCard: {
     backgroundColor: Colors.PRIMARY_900,
@@ -271,6 +457,10 @@ const styles = StyleSheet.create({
   },
   payButton: {
     marginTop: Spacing.lg,
+  },
+  downloadButton: {
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.SUCCESS,
   },
   cardBrands: {
     flexDirection: 'row',
